@@ -10,11 +10,13 @@ const PHYSICS_CONFIG = {
   timeScale: 1, // Physics simulation speed (1 = normal)
 };
 
-// White line position (static ground)
-const WHITE_LINE_Y = 743;
-const PILL_HEIGHT = 69;
-const PILL_WIDTH = 323;
-const CIRCLE_SIZE = 69;
+// Base dimensions (will be scaled)
+const BASE_WHITE_LINE_Y = 743;
+const BASE_PILL_HEIGHT = 69;
+const BASE_PILL_WIDTH = 323;
+const BASE_CIRCLE_SIZE = 69;
+const BASE_WIDTH = 393;
+const BASE_HEIGHT = 852;
 
 // Data sets for randomization
 const SIZES = [
@@ -71,21 +73,7 @@ const getRandomItem = (array: string[]) => {
   return array[Math.floor(Math.random() * array.length)];
 };
 
-// Helper function to get random position within screen bounds
-const getRandomX = () => {
-  // Random X between 80 and 313 (leaving margin for pill width)
-  return Math.floor(Math.random() * (313 - 80) + 80);
-};
-
-const getRandomCircleX = () => {
-  // Random X between 35 and 358 (leaving margin for circle size)
-  return Math.floor(Math.random() * (358 - 35) + 35);
-};
-
-const getRandomStartY = (baseY: number) => {
-  // Add random variation to starting height (-100 to -50 from base)
-  return baseY + Math.floor(Math.random() * 50 - 100);
-};
+// Helper functions will be defined inside component to access scale
 
 interface PhysicsBody {
   x: number;
@@ -96,11 +84,39 @@ interface PhysicsBody {
 interface AnimatedSketchyFriendProps {
   onDoneClick: () => void;
   animationTrigger: number;
+  scale: number;
 }
 
-export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }: AnimatedSketchyFriendProps) {
+export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger, scale }: AnimatedSketchyFriendProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showElements, setShowElements] = useState(false);
+  
+  // Calculate scaled dimensions
+  const WHITE_LINE_Y = BASE_WHITE_LINE_Y * scale;
+  const PILL_HEIGHT = BASE_PILL_HEIGHT * scale;
+  const PILL_WIDTH = BASE_PILL_WIDTH * scale;
+  const CIRCLE_SIZE = BASE_CIRCLE_SIZE * scale;
+  const SCREEN_WIDTH = BASE_WIDTH * scale;
+  const SCREEN_HEIGHT = BASE_HEIGHT * scale;
+  
+  // Helper functions for random positions (scaled)
+  const getRandomX = () => {
+    // Random X between 80*scale and (SCREEN_WIDTH - 80*scale), leaving margin for pill width
+    const margin = 80 * scale;
+    return Math.floor(Math.random() * (SCREEN_WIDTH - 2 * margin) + margin);
+  };
+
+  const getRandomCircleX = () => {
+    // Random X between 35*scale and (SCREEN_WIDTH - 35*scale), leaving margin for circle size
+    const margin = 35 * scale;
+    return Math.floor(Math.random() * (SCREEN_WIDTH - 2 * margin) + margin);
+  };
+
+  const getRandomStartY = (baseY: number) => {
+    // Add random variation to starting height (scaled)
+    const variation = 50 * scale;
+    return baseY * scale + Math.floor(Math.random() * variation - variation * 2);
+  };
   
   // Pill text content
   const [sizeText, setSizeText] = useState('5x5 inch');
@@ -150,7 +166,7 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
       setIsAnimating(true);
       setShowElements(true);
       
-      // Generate random starting positions for pills and circles
+      // Generate random starting positions for pills and circles (base values, will be scaled in function)
       const pinkX = getRandomX();
       const pinkY = getRandomStartY(-100); // Pink falls first
       
@@ -184,12 +200,12 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
       });
       engineRef.current = engine;
 
-      // Create static ground at white line
+      // Create static ground at white line (scaled)
       const ground = Matter.Bodies.rectangle(
-        196.5, // center of screen (393/2)
-        746, // Position so pill bottoms rest 7px above white line
-        393, // full width
-        20, // thickness
+        SCREEN_WIDTH / 2, // center of screen
+        WHITE_LINE_Y + 3 * scale, // Position so pill bottoms rest 7px above white line (scaled)
+        SCREEN_WIDTH, // full width
+        20 * scale, // thickness
         { 
           isStatic: true,
           friction: PHYSICS_CONFIG.friction,
@@ -197,12 +213,12 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
         }
       );
 
-      // Create invisible walls to contain objects within screen bounds
+      // Create invisible walls to contain objects within screen bounds (scaled)
       const leftWall = Matter.Bodies.rectangle(
-        -10, // left edge
-        400, // middle height
-        20, // thickness
-        1000, // height
+        -10 * scale, // left edge
+        SCREEN_HEIGHT / 2, // middle height
+        20 * scale, // thickness
+        SCREEN_HEIGHT * 2, // height (extend beyond screen)
         {
           isStatic: true,
           friction: PHYSICS_CONFIG.friction,
@@ -211,10 +227,10 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
       );
 
       const rightWall = Matter.Bodies.rectangle(
-        403, // right edge (393 + 10)
-        400, // middle height
-        20, // thickness
-        1000, // height
+        SCREEN_WIDTH + 10 * scale, // right edge
+        SCREEN_HEIGHT / 2, // middle height
+        20 * scale, // thickness
+        SCREEN_HEIGHT * 2, // height (extend beyond screen)
         {
           isStatic: true,
           friction: PHYSICS_CONFIG.friction,
@@ -222,7 +238,8 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
         }
       );
 
-      // Create pill bodies (rectangles with rounded corners)
+      // Create pill bodies (rectangles with rounded corners) - scaled
+      const chamferRadius = 35 * scale;
       const limePillBody = Matter.Bodies.rectangle(
         limeX, limeY,
         PILL_WIDTH, PILL_HEIGHT,
@@ -231,7 +248,7 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
           restitution: PHYSICS_CONFIG.restitution,
           friction: PHYSICS_CONFIG.friction,
           density: PHYSICS_CONFIG.density,
-          chamfer: { radius: 35 }, // rounded corners
+          chamfer: { radius: chamferRadius }, // rounded corners (scaled)
           frictionAir: 0.05, // Air resistance to slow rotation
         }
       );
@@ -244,7 +261,7 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
           restitution: PHYSICS_CONFIG.restitution,
           friction: PHYSICS_CONFIG.friction,
           density: PHYSICS_CONFIG.density,
-          chamfer: { radius: 35 },
+          chamfer: { radius: chamferRadius }, // scaled
           frictionAir: 0.05, // Air resistance to slow rotation
         }
       );
@@ -257,12 +274,12 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
           restitution: PHYSICS_CONFIG.restitution,
           friction: PHYSICS_CONFIG.friction,
           density: PHYSICS_CONFIG.density,
-          chamfer: { radius: 35 },
+          chamfer: { radius: chamferRadius }, // scaled
           frictionAir: 0.05, // Air resistance to slow rotation
         }
       );
 
-      // Create circle bodies
+      // Create circle bodies - scaled
       const leftCircleBody = Matter.Bodies.circle(
         leftCircleX, leftCircleY,
         CIRCLE_SIZE / 2,
@@ -403,7 +420,13 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
   }, [animationTrigger]);
 
   return (
-    <div className="bg-[#313d3a] overflow-clip relative rounded-[40px] size-full" data-name="iPhone 16 - 2">
+    <div 
+      className="bg-[#313d3a] overflow-clip relative rounded-[40px] size-full" 
+      data-name="iPhone 16 - 2"
+      style={{
+        '--scale': scale,
+      } as React.CSSProperties}
+    >
       {/* Static header elements */}
       <div className="absolute flex h-[36.705px] items-center justify-center left-[187.5px] top-[111.65px] translate-x-[-50%] w-[71.638px]" style={{ "--transform-inner-width": "72.234375", "--transform-inner-height": "29" } as React.CSSProperties}>
         <div className="flex-none rotate-[354.3deg]">
@@ -433,8 +456,11 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
               transform: `translate(-50%, -50%) rotate(${pinkPill.rotation}deg)`,
             }}
           >
-            <div className="bg-[#ff39b3] h-[69px] rounded-[50px] w-[323px]" />
-            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[18px] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 max-w-[291px] overflow-hidden text-ellipsis">
+            <div 
+              className="bg-[#ff39b3] rounded-[50px]" 
+              style={{ height: `${PILL_HEIGHT}px`, width: `${PILL_WIDTH}px` }}
+            />
+            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[18px] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 overflow-hidden text-ellipsis" style={{ maxWidth: `${291 * scale}px` }}>
               {promptText}
             </p>
           </div>
@@ -448,8 +474,11 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
               transform: `translate(-50%, -50%) rotate(${whitePill.rotation}deg)`,
             }}
           >
-            <div className="bg-[#fff2fa] h-[69px] rounded-[50px] w-[323px]" />
-            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[18px] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 max-w-[291px] overflow-hidden text-ellipsis">
+            <div 
+              className="bg-[#fff2fa] rounded-[50px]" 
+              style={{ height: `${PILL_HEIGHT}px`, width: `${PILL_WIDTH}px` }}
+            />
+            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[18px] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 overflow-hidden text-ellipsis" style={{ maxWidth: `${291 * scale}px` }}>
               {colorSchemeText}
             </p>
           </div>
@@ -463,8 +492,11 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
               transform: `translate(-50%, -50%) rotate(${limePill.rotation}deg)`,
             }}
           >
-            <div className="bg-[#ecff46] h-[69px] rounded-[50px] w-[323px]" />
-            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[19px] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 max-w-[291px] overflow-hidden text-ellipsis">
+            <div 
+              className="bg-[#ecff46] rounded-[50px]" 
+              style={{ height: `${PILL_HEIGHT}px`, width: `${PILL_WIDTH}px` }}
+            />
+            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[19px] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 overflow-hidden text-ellipsis" style={{ maxWidth: `${291 * scale}px` }}>
               {sizeText}
             </p>
           </div>
@@ -497,24 +529,57 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger }:
         </>
       )}
 
-      {/* Static white line (ground) */}
-      <div className="absolute h-0 left-[50px] top-[743px] w-[307px]">
-        <div className="absolute inset-[-7px_0_0_0]">
+      {/* Static white line (ground) - scaled */}
+      <div 
+        className="absolute h-0" 
+        style={{
+          left: `${50 * scale}px`,
+          top: `${WHITE_LINE_Y}px`,
+          width: `${307 * scale}px`,
+        }}
+      >
+        <div className="absolute" style={{ inset: `${-7 * scale}px 0 0 0` }}>
           <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 307 7">
-            <line id="Line 1" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeWidth="7" x1="3.5" x2="303.5" y1="3.5" y2="3.5" />
+            <line id="Line 1" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeWidth={7 * scale} x1="3.5" x2="303.5" y1="3.5" y2="3.5" />
           </svg>
         </div>
       </div>
 
-      {/* Split buttons */}
+      {/* Split buttons - scaled */}
       {/* PromptMe button - left side */}
-      <div className="absolute bg-[rgba(255,210,61,0.21)] h-[109px] left-0 top-[743px] w-[196.5px] cursor-pointer z-50 flex items-center justify-center pb-[33px] pt-[27px] px-[57px]" onClick={handleDoneClick}>
-        <p className="font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[#ffd23d] text-[28px] text-center">PromptMe</p>
+      <div 
+        className="absolute bg-[rgba(255,210,61,0.21)] cursor-pointer z-50 flex items-center justify-center" 
+        style={{
+          height: `${109 * scale}px`,
+          left: 0,
+          top: `${WHITE_LINE_Y}px`,
+          width: `${SCREEN_WIDTH / 2}px`,
+          paddingBottom: `${33 * scale}px`,
+          paddingTop: `${27 * scale}px`,
+          paddingLeft: `${57 * scale}px`,
+          paddingRight: `${57 * scale}px`,
+        }}
+        onClick={handleDoneClick}
+      >
+        <p className="font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[#ffd23d] text-center" style={{ fontSize: `${28 * scale}px` }}>PromptMe</p>
       </div>
 
       {/* Done button - right side */}
-      <div className="absolute bg-[rgba(55,255,248,0.2)] h-[109px] left-[196.5px] top-[743px] w-[196.5px] cursor-pointer z-50 flex items-center justify-center pb-[33px] pt-[27px] px-[57px]" onClick={onDoneClick}>
-        <p className="font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[#37FFF8] text-[28px] text-center">Done</p>
+      <div 
+        className="absolute bg-[rgba(55,255,248,0.2)] cursor-pointer z-50 flex items-center justify-center" 
+        style={{
+          height: `${109 * scale}px`,
+          left: `${SCREEN_WIDTH / 2}px`,
+          top: `${WHITE_LINE_Y}px`,
+          width: `${SCREEN_WIDTH / 2}px`,
+          paddingBottom: `${33 * scale}px`,
+          paddingTop: `${27 * scale}px`,
+          paddingLeft: `${57 * scale}px`,
+          paddingRight: `${57 * scale}px`,
+        }}
+        onClick={onDoneClick}
+      >
+        <p className="font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[#37FFF8] text-center" style={{ fontSize: `${28 * scale}px` }}>Done</p>
       </div>
     </div>
   );

@@ -6,9 +6,19 @@ import svgPaths from "../imports/svg-pm0cu7fk1u";
 interface CompletionScreenProps {
   onPromptMeClick: () => void;
   counter: number;
+  scale: number;
 }
 
-export default function CompletionScreen({ onPromptMeClick, counter }: CompletionScreenProps) {
+// Base dimensions
+const BASE_WIDTH = 393;
+const BASE_HEIGHT = 852;
+const BASE_WHITE_LINE_Y = 743;
+
+export default function CompletionScreen({ onPromptMeClick, counter, scale }: CompletionScreenProps) {
+  // Calculate scaled dimensions
+  const SCREEN_WIDTH = BASE_WIDTH * scale;
+  const SCREEN_HEIGHT = BASE_HEIGHT * scale;
+  const WHITE_LINE_Y = BASE_WHITE_LINE_Y * scale;
   return (
     <div className="bg-[#313d3a] overflow-clip relative rounded-[40px] size-full" data-name="iPhone 16 - 3">
       {/* Header elements */}
@@ -28,11 +38,18 @@ export default function CompletionScreen({ onPromptMeClick, counter }: Completio
         </div>
       </div>
       
-      {/* White line (ground) */}
-      <div className="absolute h-0 left-[50px] top-[743px] w-[307px]">
-        <div className="absolute inset-[-7px_0_0_0]">
+      {/* White line (ground) - scaled */}
+      <div 
+        className="absolute h-0" 
+        style={{
+          left: `${50 * scale}px`,
+          top: `${WHITE_LINE_Y}px`,
+          width: `${307 * scale}px`,
+        }}
+      >
+        <div className="absolute" style={{ inset: `${-7 * scale}px 0 0 0` }}>
           <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 307 7">
-            <line id="Line 1" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeWidth="7" x1="3.5" x2="303.5" y1="3.5" y2="3.5" />
+            <line id="Line 1" stroke="var(--stroke-0, white)" strokeLinecap="round" strokeWidth={7 * scale} x1="3.5" x2="303.5" y1="3.5" y2="3.5" />
           </svg>
         </div>
       </div>
@@ -103,9 +120,30 @@ export default function CompletionScreen({ onPromptMeClick, counter }: Completio
         </div>
       </div>
       
-      {/* PromptMe button */}
-      <div className="absolute bg-[rgba(255,210,61,0.21)] content-stretch flex h-[109px] items-center justify-center left-0 pb-[33px] pt-[27px] px-[18px] top-[743px] w-[393px] cursor-pointer" onClick={onPromptMeClick}>
-        <p className="font-['Golos_Text:Bold',sans-serif] font-bold h-[38px] leading-[normal] relative shrink-0 text-[#ffd23d] text-[28px] text-center w-[161px]">PromptMe</p>
+      {/* PromptMe button - scaled */}
+      <div 
+        className="absolute bg-[rgba(255,210,61,0.21)] content-stretch flex items-center justify-center left-0 cursor-pointer" 
+        style={{
+          height: `${109 * scale}px`,
+          paddingBottom: `${33 * scale}px`,
+          paddingTop: `${27 * scale}px`,
+          paddingLeft: `${18 * scale}px`,
+          paddingRight: `${18 * scale}px`,
+          top: `${WHITE_LINE_Y}px`,
+          width: `${SCREEN_WIDTH}px`,
+        }}
+        onClick={onPromptMeClick}
+      >
+        <p 
+          className="font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] relative shrink-0 text-[#ffd23d] text-center" 
+          style={{
+            height: `${38 * scale}px`,
+            fontSize: `${28 * scale}px`,
+            width: `${161 * scale}px`,
+          }}
+        >
+          PromptMe
+        </p>
       </div>
     </div>
   );
