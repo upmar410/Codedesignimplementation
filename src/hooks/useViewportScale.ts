@@ -20,16 +20,15 @@ export function useViewportScale() {
       const availableWidth = viewportWidth - appPadding;
       const availableHeight = viewportHeight - appPadding;
       
-      // Calculate scale based on both width and height constraints
-      const scaleByWidth = availableWidth / BASE_WIDTH;
-      const scaleByHeight = availableHeight / BASE_HEIGHT;
-      
-      // Use the smaller scale to ensure everything fits
-      const scaleFactor = Math.min(scaleByWidth, scaleByHeight);
+      // First: fit the height of the dark green screen
+      const scaleFactor = availableHeight / BASE_HEIGHT;
       
       // Calculate new dimensions maintaining aspect ratio
       const newWidth = BASE_WIDTH * scaleFactor;
       const newHeight = BASE_HEIGHT * scaleFactor;
+      
+      // Dark blue will show on sides if newWidth < availableWidth (content is narrower)
+      // Dark blue won't show if newWidth >= availableWidth (content fills or exceeds width)
       
       setScale(scaleFactor);
       setDimensions({ width: newWidth, height: newHeight });

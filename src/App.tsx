@@ -27,6 +27,7 @@ export default function App() {
           height: `${dimensions.height}px`,
           position: 'relative',
           flexShrink: 0,
+          maxWidth: '100%',
         }}
       >
         {currentScreen === 'animation' ? (
