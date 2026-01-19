@@ -99,6 +99,25 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger, s
   const SCREEN_WIDTH = BASE_WIDTH * scale;
   const SCREEN_HEIGHT = BASE_HEIGHT * scale;
   
+  // Title dimensions (scaled) - 20% above original position
+  const titleBaseTop = 111.65 * 0.8 * scale; // 20% above original
+  const titlePadding = 0; // No padding between words
+  
+  const yourHeight = 36.705 * 0.66 * scale; // 60% of original, then +10% = 66%
+  const yourWidth = 71.638 * scale;
+  const yourTop = titleBaseTop;
+  const yourFontSize = 25 * scale;
+  
+  const sketchyHeight = 66.337 * 0.66 * scale; // 60% of original, then +10% = 66%
+  const sketchyWidth = 151.436 * scale;
+  const sketchyTop = yourTop + yourHeight + titlePadding; // After YOUR
+  const sketchyFontSize = 44 * scale;
+  
+  const friendHeight = 38.989 * 0.66 * scale; // 60% of original, then +10% = 66%
+  const friendWidth = 94.525 * scale;
+  const friendTop = sketchyTop + sketchyHeight + titlePadding; // After sketchy
+  const friendFontSize = 25 * scale;
+  
   // Helper functions for random positions (scaled)
   const getRandomX = () => {
     // Random X between 80*scale and (SCREEN_WIDTH - 80*scale), leaving margin for pill width
@@ -140,7 +159,10 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger, s
     leftCircle?: Matter.Body;
     rightCircle?: Matter.Body;
     ground?: Matter.Body;
+    leftWall?: Matter.Body;
+    rightWall?: Matter.Body;
   }>({});
+  const previousScaleRef = useRef<number>(scale);
 
   const handleDoneClick = () => {
     // Randomize pill text content BEFORE starting animation
@@ -319,7 +341,12 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger, s
         leftCircle: leftCircleBody,
         rightCircle: rightCircleBody,
         ground,
+        leftWall,
+        rightWall,
       };
+      
+      // Update previous scale reference when bodies are created
+      previousScaleRef.current = scale;
 
       // Animation loop
       const updateLoop = () => {
@@ -419,6 +446,167 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger, s
     }
   }, [animationTrigger]);
 
+  // Handle scale changes - resize pills and circles that have already landed
+  useEffect(() => {
+    const previousScale = previousScaleRef.current;
+    const scaleRatio = scale / previousScale;
+    
+    // Only update if scale actually changed and physics bodies exist
+    if (Math.abs(scaleRatio - 1) > 0.001 && engineRef.current && Object.keys(bodiesRef.current).length > 0 && isAnimating) {
+      const bodies = bodiesRef.current;
+      
+      // Helper function to scale a body around its center point
+      // Matter.js Body.scale scales from origin, so we translate to origin, scale, then translate back
+      const scaleBodyAroundCenter = (body: Matter.Body, ratio: number) => {
+        const centerX = body.position.x;
+        const centerY = body.position.y;
+        
+        // Translate to origin, scale, then translate back
+        Matter.Body.translate(body, { x: -centerX, y: -centerY });
+        Matter.Body.scale(body, ratio, ratio);
+        Matter.Body.translate(body, { x: centerX, y: centerY });
+      };
+      
+      // Update pill positions and sizes
+      if (bodies.limePill) {
+        const currentPos = bodies.limePill.position;
+        const currentAngle = bodies.limePill.angle;
+        const newX = currentPos.x * scaleRatio;
+        const newY = currentPos.y * scaleRatio;
+        
+        // Scale around center, then update position
+        scaleBodyAroundCenter(bodies.limePill, scaleRatio);
+        Matter.Body.setPosition(bodies.limePill, { x: newX, y: newY });
+        Matter.Body.setAngle(bodies.limePill, currentAngle);
+        
+        // Update state
+        setLimePill({
+          x: newX,
+          y: newY,
+          rotation: (currentAngle * 180) / Math.PI,
+        });
+      }
+      
+      if (bodies.whitePill) {
+        const currentPos = bodies.whitePill.position;
+        const currentAngle = bodies.whitePill.angle;
+        const newX = currentPos.x * scaleRatio;
+        const newY = currentPos.y * scaleRatio;
+        
+        scaleBodyAroundCenter(bodies.whitePill, scaleRatio);
+        Matter.Body.setPosition(bodies.whitePill, { x: newX, y: newY });
+        Matter.Body.setAngle(bodies.whitePill, currentAngle);
+        
+        setWhitePill({
+          x: newX,
+          y: newY,
+          rotation: (currentAngle * 180) / Math.PI,
+        });
+      }
+      
+      if (bodies.pinkPill) {
+        const currentPos = bodies.pinkPill.position;
+        const currentAngle = bodies.pinkPill.angle;
+        const newX = currentPos.x * scaleRatio;
+        const newY = currentPos.y * scaleRatio;
+        
+        scaleBodyAroundCenter(bodies.pinkPill, scaleRatio);
+        Matter.Body.setPosition(bodies.pinkPill, { x: newX, y: newY });
+        Matter.Body.setAngle(bodies.pinkPill, currentAngle);
+        
+        setPinkPill({
+          x: newX,
+          y: newY,
+          rotation: (currentAngle * 180) / Math.PI,
+        });
+      }
+      
+      // Update circle positions and sizes
+      if (bodies.leftCircle) {
+        const currentPos = bodies.leftCircle.position;
+        const newX = currentPos.x * scaleRatio;
+        const newY = currentPos.y * scaleRatio;
+        
+        scaleBodyAroundCenter(bodies.leftCircle, scaleRatio);
+        Matter.Body.setPosition(bodies.leftCircle, { x: newX, y: newY });
+        
+        setLeftCircle({
+          x: newX,
+          y: newY,
+          rotation: 0,
+        });
+      }
+      
+      if (bodies.rightCircle) {
+        const currentPos = bodies.rightCircle.position;
+        const newX = currentPos.x * scaleRatio;
+        const newY = currentPos.y * scaleRatio;
+        
+        scaleBodyAroundCenter(bodies.rightCircle, scaleRatio);
+        Matter.Body.setPosition(bodies.rightCircle, { x: newX, y: newY });
+        
+        setRightCircle({
+          x: newX,
+          y: newY,
+          rotation: 0,
+        });
+      }
+      
+      // Update ground position and size
+      if (bodies.ground) {
+        const newGroundY = (BASE_WHITE_LINE_Y * scale) + 3 * scale;
+        const newGroundX = (BASE_WIDTH * scale) / 2;
+        const groundCenterX = bodies.ground.position.x;
+        const groundCenterY = bodies.ground.position.y;
+        
+        // Scale width only, around center
+        Matter.Body.translate(bodies.ground, { x: -groundCenterX, y: -groundCenterY });
+        Matter.Body.scale(bodies.ground, scaleRatio, 1);
+        Matter.Body.translate(bodies.ground, { x: groundCenterX, y: groundCenterY });
+        Matter.Body.setPosition(bodies.ground, { 
+          x: newGroundX, 
+          y: newGroundY 
+        });
+      }
+      
+      // Update wall positions
+      if (bodies.leftWall) {
+        const newX = -10 * scale;
+        const newY = (BASE_HEIGHT * scale) / 2;
+        const wallCenterX = bodies.leftWall.position.x;
+        const wallCenterY = bodies.leftWall.position.y;
+        
+        // Scale height only, around center
+        Matter.Body.translate(bodies.leftWall, { x: -wallCenterX, y: -wallCenterY });
+        Matter.Body.scale(bodies.leftWall, 1, scaleRatio);
+        Matter.Body.translate(bodies.leftWall, { x: wallCenterX, y: wallCenterY });
+        Matter.Body.setPosition(bodies.leftWall, { 
+          x: newX, 
+          y: newY 
+        });
+      }
+      
+      if (bodies.rightWall) {
+        const newX = (BASE_WIDTH * scale) + 10 * scale;
+        const newY = (BASE_HEIGHT * scale) / 2;
+        const wallCenterX = bodies.rightWall.position.x;
+        const wallCenterY = bodies.rightWall.position.y;
+        
+        // Scale height only, around center
+        Matter.Body.translate(bodies.rightWall, { x: -wallCenterX, y: -wallCenterY });
+        Matter.Body.scale(bodies.rightWall, 1, scaleRatio);
+        Matter.Body.translate(bodies.rightWall, { x: wallCenterX, y: wallCenterY });
+        Matter.Body.setPosition(bodies.rightWall, { 
+          x: newX, 
+          y: newY 
+        });
+      }
+    }
+    
+    // Update previous scale reference
+    previousScaleRef.current = scale;
+  }, [scale, isAnimating]);
+
   return (
     <div 
       className="bg-[#313d3a] overflow-clip relative rounded-[40px] size-full" 
@@ -427,20 +615,59 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger, s
         '--scale': scale,
       } as React.CSSProperties}
     >
-      {/* Static header elements */}
-      <div className="absolute flex h-[36.705px] items-center justify-center left-[187.5px] top-[111.65px] translate-x-[-50%] w-[71.638px]" style={{ "--transform-inner-width": "72.234375", "--transform-inner-height": "29" } as React.CSSProperties}>
+      {/* Static header elements - centered horizontally, scaled dynamically */}
+      <div 
+        className="absolute flex items-center justify-center translate-x-[-50%]" 
+        style={{ 
+          left: '50%',
+          top: `${yourTop}px`,
+          height: `${yourHeight}px`,
+          width: `${yourWidth}px`,
+        }}
+      >
         <div className="flex-none rotate-[354.3deg]">
-          <p className="font-['Golos_Text:Regular',sans-serif] font-normal leading-[normal] relative text-[#e0e0e0] text-[25px] text-center text-nowrap">YOUR</p>
+          <p 
+            className="font-normal leading-[normal] relative text-[#e0e0e0] text-center text-nowrap"
+            style={{ fontFamily: "'Golos Text', sans-serif", fontSize: `${yourFontSize}px` }}
+          >
+            YOUR
+          </p>
         </div>
       </div>
-      <div className="absolute flex h-[38.989px] items-center justify-center left-[198.26px] top-[169px] translate-x-[-50%] w-[94.525px]" style={{ "--transform-inner-width": "93.046875", "--transform-inner-height": "29" } as React.CSSProperties}>
+      <div 
+        className="absolute flex items-center justify-center translate-x-[-50%]" 
+        style={{ 
+          left: '50%',
+          top: `${friendTop}px`,
+          height: `${friendHeight}px`,
+          width: `${friendWidth}px`,
+        }}
+      >
         <div className="flex-none rotate-[354.3deg]">
-          <p className="font-['Golos_Text:Regular',sans-serif] font-normal leading-[normal] relative text-[#e0e0e0] text-[25px] text-center text-nowrap">FRIEND</p>
+          <p 
+            className="font-normal leading-[normal] relative text-[#e0e0e0] text-center text-nowrap"
+            style={{ fontFamily: "'Golos Text', sans-serif", fontSize: `${friendFontSize}px` }}
+          >
+            FRIEND
+          </p>
         </div>
       </div>
-      <div className="absolute flex h-[66.337px] items-center justify-center left-[200.71px] top-[124.2px] translate-x-[-50%] w-[151.436px]" style={{ "--transform-inner-width": "149.171875", "--transform-inner-height": "50.5" } as React.CSSProperties}>
+      <div 
+        className="absolute flex items-center justify-center translate-x-[-50%]" 
+        style={{ 
+          left: '50%',
+          top: `${sketchyTop}px`,
+          height: `${sketchyHeight}px`,
+          width: `${sketchyWidth}px`,
+        }}
+      >
         <div className="flex-none rotate-[354.303deg]">
-          <p className="font-['Cabin_Sketch:Bold',sans-serif] leading-[normal] not-italic relative text-[#ffd23d] text-[44px] text-center text-nowrap">sketchy</p>
+          <p 
+            className="leading-[normal] not-italic relative text-[#ffd23d] text-center text-nowrap"
+            style={{ fontFamily: "'Cabin Sketch', cursive, sans-serif", fontWeight: 700, fontSize: `${sketchyFontSize}px` }}
+          >
+            sketchy
+          </p>
         </div>
       </div>
 
@@ -460,7 +687,7 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger, s
               className="bg-[#ff39b3] rounded-[50px]" 
               style={{ height: `${PILL_HEIGHT}px`, width: `${PILL_WIDTH}px` }}
             />
-            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[18px] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 overflow-hidden text-ellipsis" style={{ maxWidth: `${291 * scale}px` }}>
+            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 overflow-hidden text-ellipsis" style={{ fontSize: `${18 * scale}px`, maxWidth: `${291 * scale}px` }}>
               {promptText}
             </p>
           </div>
@@ -478,7 +705,7 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger, s
               className="bg-[#fff2fa] rounded-[50px]" 
               style={{ height: `${PILL_HEIGHT}px`, width: `${PILL_WIDTH}px` }}
             />
-            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[18px] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 overflow-hidden text-ellipsis" style={{ maxWidth: `${291 * scale}px` }}>
+            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 overflow-hidden text-ellipsis" style={{ fontSize: `${18 * scale}px`, maxWidth: `${291 * scale}px` }}>
               {colorSchemeText}
             </p>
           </div>
@@ -496,7 +723,7 @@ export default function AnimatedSketchyFriend({ onDoneClick, animationTrigger, s
               className="bg-[#ecff46] rounded-[50px]" 
               style={{ height: `${PILL_HEIGHT}px`, width: `${PILL_WIDTH}px` }}
             />
-            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-[19px] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 overflow-hidden text-ellipsis" style={{ maxWidth: `${291 * scale}px` }}>
+            <p className="absolute font-['Golos_Text:Bold',sans-serif] font-bold leading-[normal] text-black text-nowrap top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 overflow-hidden text-ellipsis" style={{ fontSize: `${19 * scale}px`, maxWidth: `${291 * scale}px` }}>
               {sizeText}
             </p>
           </div>
