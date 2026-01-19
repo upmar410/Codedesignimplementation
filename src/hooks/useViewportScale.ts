@@ -11,17 +11,25 @@ export function useViewportScale() {
 
   useEffect(() => {
     const updateScale = () => {
-      // Get viewport height, leaving some padding (e.g., 20px on top and bottom)
+      // Get viewport dimensions
+      const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      const padding = 40; // Total padding (top + bottom)
-      const availableHeight = viewportHeight - padding;
       
-      // Calculate scale based on available height
-      const scaleFactor = availableHeight / BASE_HEIGHT;
+      // Account for App component padding (p-1 = 4px on each side = 8px total)
+      const appPadding = 8;
+      const availableWidth = viewportWidth - appPadding;
+      const availableHeight = viewportHeight - appPadding;
+      
+      // Calculate scale based on both width and height constraints
+      const scaleByWidth = availableWidth / BASE_WIDTH;
+      const scaleByHeight = availableHeight / BASE_HEIGHT;
+      
+      // Use the smaller scale to ensure everything fits
+      const scaleFactor = Math.min(scaleByWidth, scaleByHeight);
       
       // Calculate new dimensions maintaining aspect ratio
-      const newHeight = availableHeight;
-      const newWidth = newHeight * ASPECT_RATIO;
+      const newWidth = BASE_WIDTH * scaleFactor;
+      const newHeight = BASE_HEIGHT * scaleFactor;
       
       setScale(scaleFactor);
       setDimensions({ width: newWidth, height: newHeight });
