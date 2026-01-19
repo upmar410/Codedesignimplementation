@@ -20,14 +20,13 @@ export default function App() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 p-1 overflow-hidden">
+    <div className="flex items-start justify-center min-h-screen bg-gray-900 p-1 overflow-hidden">
       <div 
         style={{
           width: `${dimensions.width}px`,
           height: `${dimensions.height}px`,
           position: 'relative',
           flexShrink: 0,
-          maxWidth: '100%',
         }}
       >
         {currentScreen === 'animation' ? (
